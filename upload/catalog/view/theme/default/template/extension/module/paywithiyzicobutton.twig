@@ -1,0 +1,108 @@
+<script src="https://static.iyzipay.com/plugins/v1/iyzico-buttons.min.js"></script>
+
+<script type="text/javascript">
+    console.log("payment with iyzico + button !!!")
+
+    $('#button-cart').after('<div style="margin:5px;"><div id="iyzico-button"></div></div>');
+
+    console.log({{ product_id }})
+
+    new iyzico.buttons({
+        locale: "tr_TR",
+        selector: "#iyzico-button",
+        buttonType: "pay",
+        style: {
+            color: "blue",
+            shape: "rect",
+            tagline: "logo"
+        },
+        form: {
+            name: "iyzico-refund-form",
+            action: "/extencion/module/paywithiyzicobutton",
+        },
+        onSubmit: function () {
+            var quantity = document.getElementsByName('quantity')[0].value;
+
+            var basketItems = []
+
+            var totalPrice = 0;
+
+            if(quantity > 1){
+                for (var i = 0; i < quantity; i++){
+                    basketItems.push({
+                        "id": "{{ product_id }}",
+                        "price": "{{ price }}",
+                        "name": "{{ name }}",
+                        "category1": "{{ category_0 }}",
+                        "category2": "{{ category_1 }}",
+                        "itemType": "PHYSICAL"
+                    });
+                    totalPrice += Number({{ price }});
+                }
+            }else {
+                basketItems.push({
+                    "id": "{{ product_id }}",
+                    "price": "{{ price }}",
+                    "name": "{{ name }}",
+                    "category1": "{{ category_0 }}",
+                    "category2": "{{ category_1 }}",
+                    "itemType": "PHYSICAL"
+                });
+
+                totalPrice = Number({{ price }});
+            }
+
+            $.ajax({
+                url: 'index.php?route=extension/module/paywithiyzicobutton/payservice',
+                type: 'post',
+                data: {
+                    "locale": "en",
+                    "conversationId": "123456789",
+                    "price": String(totalPrice),
+                    "basketId": "{{ customer_id }}{{ product_id }}{{ name }}{{ product_id }}{{ customer_id }}",
+                    "paymentGroup": "PRODUCT",
+                    "buyer": {
+                        "id": "{{ customer_id }}",
+                        "name": "{{ firstname }}",
+                        "surname": "{{ lastname }}",
+                        "identityNumber": "11111111111",
+                        "email": "{{ email }}",
+                        "registrationAddress": "{{ address_1 }} {{ address_2 }}",
+                        "city": "{{ city }}",
+                        "country": "{{ country }}",
+                        "zipCode": "{{ postcode }}",
+                        "ip": "{{ ip }}"
+                    },
+                    "shippingAddress": {
+                        "address": "{{ address_1 }} {{ address_2 }}",
+                        "zipCode": "{{ postcode }}",
+                        "contactName": "{{ firstname }} {{ lastname }}",
+                        "city": "{{ city }}",
+                        "country": "{{ country }}"
+                    },
+                    "billingAddress": {
+                        "address": "{{ address_1 }} {{ address_2 }}",
+                        "zipCode": "{{ postcode }}",
+                        "contactName": "{{ firstname }} {{ lastname }}",
+                        "city": "{{ city }}",
+                        "country": "{{ country }}"
+                    },
+                    "basketItems": basketItems,
+                    "callbackUrl": "http://iyzicostudy.test/",
+                    "currency": "USD",
+                    "paidPrice": String(totalPrice)
+                },
+                dataType: 'json',
+                success: function(resp) {
+                    if(resp.pwi_redirect) {
+                        window.location.href = resp.pwi_redirect;
+                    }
+                },
+                error: function(error) {
+                    console.log("some error");
+                }
+            });
+
+        }
+    });
+</script>
